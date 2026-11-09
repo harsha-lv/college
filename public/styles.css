@@ -168,19 +168,38 @@ nav a.active {
   margin-bottom: 0;
 }
 
-.credit-summary {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  padding: 8px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
-  white-space: nowrap;
+.credit-live {
+  margin-bottom: 16px;
 }
 
-.credit-summary strong {
+.credit-live-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.credit-live-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.credit-live-item strong {
   font-size: 18px;
+}
+
+.credit-live-note {
+  margin: 12px 0 0;
+  font-size: 13px;
+}
+
+.credit-live.over-limit {
+  border-color: #efc4c7;
+  background: var(--danger-soft);
+}
+
+.credit-live.over-limit .credit-live-item strong {
+  color: var(--danger);
 }
 
 .panel {
@@ -522,8 +541,15 @@ tbody tr:hover {
     gap: 12px;
   }
 
-  .credit-summary {
-    align-items: flex-start;
+  .credit-live-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .credit-live-item {
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
   }
 
   .section-heading {

@@ -13,13 +13,6 @@
         <p class="muted">There is no open semester for registration right now.</p>
       <% } %>
     </div>
-
-    <% if (term) { %>
-      <div class="credit-summary">
-        <span class="muted">Current credits</span>
-        <strong><%= currentCredits %> / <%= term.maxCredits %></strong>
-      </div>
-    <% } %>
   </div>
 
   <% if (!term) { %>
@@ -33,6 +26,48 @@
   <% } else { %>
     <form method="post" action="/courses/select">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+      <%
+        const initialSelectedCredits = courses.reduce((total, course) => {
+          if (!selectedOfferingIds.has(course.offeringId)) return total;
+          if (course.missingPrerequisites.length > 0 || course.studentStatus !== null) return total;
+          const isFull = course.availableSeats === 0;
+          if (isFull && waitlistOfferingIds.has(course.offeringId)) return total;
+          return total + course.credits;
+        }, 0);
+        const initialTotalCredits = currentCredits + initialSelectedCredits;
+        const initialRemainingCredits = term.maxCredits - initialTotalCredits;
+      %>
+
+      <section
+        class="panel credit-live<%= initialTotalCredits > term.maxCredits ? " over-limit" : "" %>"
+        data-credit-summary
+        data-current-credits="<%= currentCredits %>"
+        data-max-credits="<%= term.maxCredits %>"
+        aria-live="polite"
+      >
+        <div class="credit-live-grid">
+          <div class="credit-live-item">
+            <span class="muted">Current credits</span>
+            <strong><%= currentCredits %></strong>
+          </div>
+          <div class="credit-live-item">
+            <span class="muted">Selected credits</span>
+            <strong data-selected-credits><%= initialSelectedCredits %></strong>
+          </div>
+          <div class="credit-live-item">
+            <span class="muted">Total after selection</span>
+            <strong><span data-total-credits><%= initialTotalCredits %></span> / <%= term.maxCredits %></strong>
+          </div>
+        </div>
+        <p class="credit-live-note<%= initialRemainingCredits < 0 ? " text-danger" : " muted" %>" data-credit-note>
+          <% if (initialRemainingCredits < 0) { %>
+            <%= -initialRemainingCredits %> credit<%= initialRemainingCredits === -1 ? "" : "s" %> over the <%= term.maxCredits %>-credit limit.
+          <% } else { %>
+            <%= initialRemainingCredits %> credit<%= initialRemainingCredits === 1 ? "" : "s" %> remaining.
+          <% } %>
+        </p>
+      </section>
 
       <div class="table-wrap">
         <table class="course-table">
@@ -55,7 +90,12 @@
                 const waitlisted = waitlistOfferingIds.has(course.offeringId);
                 const blocked = course.missingPrerequisites.length > 0 || course.studentStatus !== null;
               %>
-              <tr class="<%= blocked ? "row-blocked" : "" %>">
+              <tr
+                class="<%= blocked ? "row-blocked" : "" %>"
+                data-course-row
+                data-credits="<%= course.credits %>"
+                data-full="<%= course.availableSeats === 0 ? "true" : "false" %>"
+              >
                 <td>
                   <input
                     type="checkbox"
@@ -136,5 +176,7 @@
     </form>
   <% } %>
 </main>
+
+<script src="/courses.js" defer></script>
 
 <%- include("partials/footer") %>
