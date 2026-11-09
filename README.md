@@ -155,6 +155,19 @@ pg_ctl -D .pgdata -o "-p 55432 -k /tmp" -l .pgdata/server.log start
 
 ## Deploying to Vercel with Neon
 
+### Hosted production and demo
+
+There are two independent Vercel projects connected to this repository:
+
+| Site | Vercel project | Neon branch | Demo mode |
+| --- | --- | --- | --- |
+| Production | `college` | `production` | `false` (default) |
+| Hosted demo | `college-demo` | `demo` | `true` |
+
+Both run with `NODE_ENV=production` for HTTPS cookies and security headers. Only the hosted demo sets `DEMO_MODE=true` to show the shared-sample-data badge and demo login hints. It has its own `SESSION_SECRET` and `SESSION_COOKIE_NAME`, and uses database URLs from the isolated `demo` branch. Demo credentials are listed below; don't enter real student information there.
+
+The hosted demo branch was initialized schema-only and seeded separately; it is not automatically synced with production or the localhost demo. Never run demo seeding against the production database. Git pushes deploy app code to both projects, but do not automatically migrate or reset either database. Existing Vercel Deployment Protection remains in place.
+
 The app runs on Vercel as a Node.js serverless function (`api/index.ts`) and stores data in Neon PostgreSQL.
 
 ### 1. Create the Neon database

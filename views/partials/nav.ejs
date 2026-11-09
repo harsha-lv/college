@@ -1,6 +1,9 @@
 <header class="site-header">
   <div class="container header-inner">
     <a class="brand" href="/">College Registration</a>
+    <% if (demoMode) { %>
+      <span class="badge badge-warning">Demo · shared sample data</span>
+    <% } %>
 
     <% if (typeof currentStudent !== "undefined" && currentStudent) { %>
       <nav aria-label="Main navigation">

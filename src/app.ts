@@ -44,7 +44,8 @@ export function createApp() {
   app.set("trust proxy", env.NODE_ENV === "production" ? 1 : 0);
 
   app.locals.appName = "College Course Registration";
-  app.locals.showDemo = env.NODE_ENV !== "production";
+  app.locals.demoMode = env.DEMO_MODE === "true";
+  app.locals.showDemo = app.locals.demoMode || env.NODE_ENV !== "production";
   app.locals.formatDate = formatDate;
   app.locals.formatDateTime = formatDateTime;
 
