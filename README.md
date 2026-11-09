@@ -226,7 +226,6 @@ views/
 - Session IDs are regenerated after login.
 - Cookies use `SameSite=Lax` and `Secure` in production. Production deployments must use HTTPS; use `NODE_ENV=development` for local HTTP.
 - POST requests require a per-session CSRF token.
-- Mutating requests are checked against the request origin.
 - All protected pages use authentication middleware.
 - Registration details are scoped to the signed-in student.
 - Helmet is enabled.

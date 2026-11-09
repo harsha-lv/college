@@ -7,7 +7,6 @@ import { env } from "./config/env";
 import { prisma } from "./db";
 import { csrfMiddleware } from "./middleware/csrf";
 import { flashMiddleware } from "./middleware/flash";
-import { originCheck } from "./middleware/origin";
 import authRoutes from "./routes/auth";
 import courseRoutes from "./routes/courses";
 import registrationRoutes from "./routes/registration";
@@ -82,7 +81,6 @@ export function createApp() {
   app.use(passport.session());
   app.use(flashMiddleware);
   app.use(csrfMiddleware);
-  app.use(originCheck);
 
   app.get("/", (req, res) => {
     return res.redirect(req.isAuthenticated() ? "/courses" : "/login");
