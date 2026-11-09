@@ -1,0 +1,136 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Student {
+  id           String   @id @default(uuid()) @db.Uuid
+  fullName     String
+  email        String   @unique
+  studentNumber String  @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  completedCourses CompletedCourse[]
+  registrations    Registration[]
+  enrollments      Enrollment[]
+}
+
+model Term {
+  id               String   @id @default(uuid()) @db.Uuid
+  name             String   @unique
+  startsOn         DateTime
+  endsOn           DateTime
+  maxCredits       Int      @default(18)
+  registrationOpen Boolean  @default(true)
+  createdAt        DateTime @default(now())
+
+  offerings     CourseOffering[]
+  registrations Registration[]
+}
+
+model Course {
+  id          String  @id @default(uuid()) @db.Uuid
+  code        String  @unique
+  title       String
+  description String?
+  credits     Int
+
+  prerequisites Prerequisite[]   @relation("CoursePrerequisites")
+  requiredFor   Prerequisite[]   @relation("PrerequisiteFor")
+  offerings     CourseOffering[]
+  completedBy   CompletedCourse[]
+}
+
+model Prerequisite {
+  courseId       String @db.Uuid
+  prerequisiteId String @db.Uuid
+
+  course       Course @relation("CoursePrerequisites", fields: [courseId], references: [id], onDelete: Cascade)
+  prerequisite Course @relation("PrerequisiteFor", fields: [prerequisiteId], references: [id], onDelete: Cascade)
+
+  @@id([courseId, prerequisiteId])
+}
+
+model CourseOffering {
+  id          String  @id @default(uuid()) @db.Uuid
+  courseId    String  @db.Uuid
+  termId      String  @db.Uuid
+  facultyName String
+  room        String?
+  schedule    String?
+  capacity    Int
+
+  course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  term        Term         @relation(fields: [termId], references: [id], onDelete: Cascade)
+  enrollments Enrollment[]
+
+  @@unique([courseId, termId])
+  @@index([termId])
+}
+
+model CompletedCourse {
+  studentId     String   @db.Uuid
+  courseId      String   @db.Uuid
+  grade         String
+  completedTerm String?
+  completedAt   DateTime @default(now())
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  course  Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@id([studentId, courseId])
+  @@index([studentId])
+}
+
+model Registration {
+  id        String   @id @default(uuid()) @db.Uuid
+  studentId String   @db.Uuid
+  termId    String   @db.Uuid
+  createdAt DateTime @default(now())
+
+  student     Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  term        Term         @relation(fields: [termId], references: [id], onDelete: Cascade)
+  enrollments Enrollment[]
+
+  @@index([studentId, createdAt])
+  @@index([termId])
+}
+
+model Enrollment {
+  id             String           @id @default(uuid()) @db.Uuid
+  registrationId String           @db.Uuid
+  studentId      String           @db.Uuid
+  offeringId     String           @db.Uuid
+  status         EnrollmentStatus
+  createdAt      DateTime         @default(now())
+
+  registration Registration   @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  student      Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  offering     CourseOffering @relation(fields: [offeringId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, offeringId])
+  @@index([offeringId, status])
+  @@index([studentId, status])
+}
+
+enum EnrollmentStatus {
+  ENROLLED
+  WAITLISTED
+}
+
+// Session storage used by express-session / connect-pg-simple.
+// This model keeps the table under Prisma's migration management so
+// `prisma migrate dev` does not treat it as an unknown table and drop it.
+model Session {
+  sid    String   @id @db.VarChar
+  sess   Json     @db.Json
+  expire DateTime @db.Timestamp(6)
+
+  @@index([expire], map: "IDX_session_expire")
+  @@map("session")
+}
