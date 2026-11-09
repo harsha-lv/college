@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { env } from "../config/env";
 import { passport } from "../auth/passport";
 import { redirectIfAuthenticated } from "../middleware/auth";
 import { setFlash } from "../middleware/flash";
@@ -69,7 +70,7 @@ router.post("/logout", (req, res, next) => {
     req.session.destroy((destroyError) => {
       if (destroyError) return next(destroyError);
 
-      res.clearCookie("college.sid", { path: "/" });
+      res.clearCookie(env.SESSION_COOKIE_NAME, { path: "/" });
       return res.redirect("/login");
     });
   });

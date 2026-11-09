@@ -4,7 +4,7 @@ import { sessionPool } from "./session";
 
 const app = createApp();
 
-const server = app.listen(env.PORT, () => {
+const server = app.listen(env.PORT, env.HOST, () => {
   console.log(`College course registration running at http://localhost:${env.PORT}`);
 });
 

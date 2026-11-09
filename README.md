@@ -129,6 +129,30 @@ npm run build
 npm start
 ```
 
+## Separate localhost demo
+
+Keep `.env` pointed at Neon. These commands explicitly override database settings for their child processes, using only the local PostgreSQL cluster:
+
+```bash
+npm run demo:setup
+npm run demo
+```
+
+Open <http://localhost:3002>. Sign in with `alice@college.edu`, `bob@college.edu`, or `carol@college.edu`; password: `Student123!`.
+
+- Database: `college_registration_demo` on `127.0.0.1:55432`, under the project `.pgdata/` cluster.
+- Completely separate from Neon and the older `college_registration` local database. No data is copied or synced.
+- `demo:setup` creates the demo database if missing, applies migrations, and seeds demo data without resetting existing registrations. Re-running it refreshes demo account passwords and course fixtures.
+- The demo binds only to `127.0.0.1`, uses a distinct `college.demo.sid` cookie, and generates a fresh session secret each launch (sign in again after restarting).
+- Inspect the demo with `npm run demo:studio` or `psql -h 127.0.0.1 -p 55432 -U "$USER" -d college_registration_demo`.
+- `npm run dev` still uses `.env` (currently Neon); use **`npm run demo`** for this isolated demo.
+
+The local PostgreSQL cluster must be running. If stopped, start it from the project root:
+
+```bash
+pg_ctl -D .pgdata -o "-p 55432 -k /tmp" -l .pgdata/server.log start
+```
+
 ## Deploying to Vercel with Neon
 
 The app runs on Vercel as a Node.js serverless function (`api/index.ts`) and stores data in Neon PostgreSQL.
@@ -305,6 +329,9 @@ views/
 | Command | Description |
 | --- | --- |
 | `npm run dev` | Start the server with `tsx watch` |
+| `npm run demo:setup` | Create/migrate/seed the separate local demo database |
+| `npm run demo` | Run the local-only demo at localhost:3002 |
+| `npm run demo:studio` | Open Prisma Studio against the local demo, not Neon |
 | `npm run build` | Generate Prisma Client and compile TypeScript to `dist/` |
 | `npm start` | Run the compiled server |
 | `npm run typecheck` | Type-check without emitting |

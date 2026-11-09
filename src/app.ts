@@ -64,7 +64,7 @@ export function createApp() {
   app.use(
     session({
       store: createSessionStore(),
-      name: "college.sid",
+      name: env.SESSION_COOKIE_NAME,
       secret: env.SESSION_SECRET,
       resave: false,
       saveUninitialized: false,

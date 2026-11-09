@@ -8,6 +8,9 @@
   },
   "scripts": {
     "dev": "tsx watch src/server.ts",
+    "demo:setup": "node scripts/demo.cjs setup",
+    "demo": "node scripts/demo.cjs start",
+    "demo:studio": "node scripts/demo.cjs studio",
     "build": "prisma generate && tsc -p tsconfig.build.json",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
