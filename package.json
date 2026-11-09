@@ -3,9 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "description": "College course registration system built with Express, Passport Local, Prisma, and PostgreSQL.",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "prisma generate && tsc -p tsconfig.build.json",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -13,10 +16,14 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:reset": "prisma migrate reset --force",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@neon/config": "^1.13.0",
+    "@neon/env": "^2.1.0",
     "@prisma/client": "6.19.3",
+    "@vercel/functions": "^3.11.0",
     "bcryptjs": "3.0.3",
     "connect-pg-simple": "10.0.0",
     "dotenv": "17.2.3",

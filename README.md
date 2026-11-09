@@ -39,6 +39,7 @@ The interface is intentionally plain: HTML tables, forms, and a small amount of 
 - **Password hashing:** `bcryptjs`
 - **Validation:** Zod
 - **Tests:** Vitest
+- **Deployment:** Vercel serverless function + Neon PostgreSQL
 
 ## Getting started
 
@@ -64,8 +65,11 @@ cp .env.example .env
 The example URL assumes a PostgreSQL role and database:
 
 ```text
-postgresql://college:college_dev_password@localhost:5432/college_registration?schema=public
+DATABASE_URL="postgresql://college:college_dev_password@localhost:5432/college_registration?schema=public"
+DATABASE_URL_UNPOOLED="postgresql://college:college_dev_password@localhost:5432/college_registration?schema=public"
 ```
+
+`DATABASE_URL` is used by the app and Prisma Client. `DATABASE_URL_UNPOOLED` is used by Prisma migrations. For local PostgreSQL, both can point at the same database.
 
 Create them if needed:
 
@@ -90,6 +94,7 @@ Use this `.env` value:
 
 ```text
 DATABASE_URL="postgresql://YOUR_USER@127.0.0.1:55432/college_registration?schema=public"
+DATABASE_URL_UNPOOLED="postgresql://YOUR_USER@127.0.0.1:55432/college_registration?schema=public"
 ```
 
 Stop the local cluster with:
@@ -123,6 +128,93 @@ For a production-style build:
 npm run build
 npm start
 ```
+
+## Deploying to Vercel with Neon
+
+The app runs on Vercel as a Node.js serverless function (`api/index.ts`) and stores data in Neon PostgreSQL.
+
+### 1. Create the Neon database
+
+Create a project in the [Neon console](https://console.neon.tech), then copy both connection strings:
+
+- **Pooled** connection string — the host contains `-pooler`
+- **Direct** connection string — the host does not contain `-pooler`
+
+Use the pooled URL for the app and the direct URL for migrations:
+
+```text
+DATABASE_URL="postgresql://USER:PASSWORD@ep-xxxx-pooler.REGION.aws.neon.tech/neondb?sslmode=require&pgbouncer=true&connection_limit=1"
+DATABASE_URL_UNPOOLED="postgresql://USER:PASSWORD@ep-xxxx.REGION.aws.neon.tech/neondb?sslmode=require"
+```
+
+`pgbouncer=true` and `connection_limit=1` are important for Prisma when running behind Neon's pooled endpoint. The session store uses the same pooled URL with a small per-instance pool.
+
+### 2. Apply migrations and seed
+
+Run these locally with the Neon URLs:
+
+```bash
+DATABASE_URL="..." DATABASE_URL_UNPOOLED="..." npm run db:deploy
+DATABASE_URL="..." DATABASE_URL_UNPOOLED="..." npm run db:seed
+```
+
+Use `db:deploy`, not `db:migrate`, against Neon. The seed creates the demo students and courses. The demo password is public, so replace the seed or create real accounts before storing real student data.
+
+### 3. Configure Vercel
+
+Import the Git repository in Vercel, or use the CLI:
+
+```bash
+npx vercel
+```
+
+Add these environment variables in the Vercel project settings:
+
+| Name | Value |
+| --- | --- |
+| `DATABASE_URL` | Neon pooled connection string |
+| `DATABASE_URL_UNPOOLED` | Neon direct connection string |
+| `SESSION_SECRET` | Random string, at least 32 characters |
+
+Generate a session secret with:
+
+```bash
+openssl rand -hex 32
+```
+
+Set the variables for Production. Use a separate Neon development branch for Preview deployments rather than sharing production data.
+
+Vercel sets `NODE_ENV=production` automatically. The app then uses secure session cookies, so access it over the Vercel HTTPS URL.
+
+### 4. Deploy
+
+```bash
+npx vercel --prod
+```
+
+Or push to the connected Git branch. Vercel runs `npm run build`, which generates Prisma Client before compiling the app.
+
+### Vercel notes
+
+- `api/index.ts` exports the Express app as a serverless handler. `src/server.ts` remains the entry point for local or long-running hosting.
+- `vercel.json` rewrites requests to the function and includes `views/` and `public/` in the function bundle.
+- The `session` table is created by the Prisma migration; `connect-pg-simple` does not create it at runtime.
+- Prisma includes the `rhel-openssl-3.0.x` query engine for the Vercel Node runtime.
+- The session store and Prisma Client are cached across warm serverless invocations to reduce connection churn.
+- The PostgreSQL session pool is attached to Vercel's lifecycle with `attachDatabasePool`.
+- Node's address-selection attempt timeout is raised to at least 2 seconds to accommodate cross-region connections; the pool has a 10-second connection timeout.
+- Neon's pooled endpoint is required for production; direct connections can be exhausted quickly by serverless scaling.
+
+### Linked Neon project
+
+`neon.ts` preserves the PostgreSQL-only setup and existing Passport login; Neon Auth is not enabled. The local `.neon` link is gitignored. To reconcile services and refresh credentials in `.env`:
+
+```bash
+npx neon@latest deploy
+npm run db:deploy
+```
+
+Neon writes `DATABASE_URL` (pooled) and `DATABASE_URL_UNPOOLED` (direct); Prisma uses those names without a manually maintained `DIRECT_URL` alias. Neither `.env` nor `.env.local` should be committed. Migrations and normal app queries require outbound access to PostgreSQL port 5432.
 
 ## Demo accounts
 
@@ -172,11 +264,14 @@ Seat assignment runs in a serializable transaction with row-level locks on the s
 ## Project structure
 
 ```text
+api/
+  index.ts               Vercel serverless entry point
 prisma/
   schema.prisma
   seed.ts
   migrations/
 public/
+  courses.js
   styles.css
 src/
   app.ts                 Express app setup
@@ -184,7 +279,7 @@ src/
   auth/passport.ts       Passport Local strategy
   config/env.ts          Environment validation
   db.ts                  Prisma client
-  middleware/            Auth, CSRF, flash, origin checks
+  middleware/            Auth, CSRF, flash
   routes/                Auth, courses, registration, records
   services/              Catalog, validation, registration, records
   session.ts             PostgreSQL session store
@@ -192,6 +287,7 @@ src/
   utils/
 tests/
   registration.test.ts
+vercel.json              Vercel function and rewrite configuration
 views/
   partials/
   login.ejs
@@ -209,7 +305,7 @@ views/
 | Command | Description |
 | --- | --- |
 | `npm run dev` | Start the server with `tsx watch` |
-| `npm run build` | Compile TypeScript to `dist/` |
+| `npm run build` | Generate Prisma Client and compile TypeScript to `dist/` |
 | `npm start` | Run the compiled server |
 | `npm run typecheck` | Type-check without emitting |
 | `npm test` | Run Vitest tests |

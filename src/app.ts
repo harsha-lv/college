@@ -37,9 +37,10 @@ function formatDateTime(value: Date | string) {
 
 export function createApp() {
   const app = express();
+  const projectRoot = path.resolve(__dirname, "..");
 
   app.set("view engine", "ejs");
-  app.set("views", path.join(process.cwd(), "views"));
+  app.set("views", path.join(projectRoot, "views"));
   app.set("trust proxy", env.NODE_ENV === "production" ? 1 : 0);
 
   app.locals.appName = "College Course Registration";
@@ -55,7 +56,7 @@ export function createApp() {
   );
   app.use(express.urlencoded({ extended: false }));
   app.use(
-    express.static(path.join(process.cwd(), "public"), {
+    express.static(path.join(projectRoot, "public"), {
       maxAge: env.NODE_ENV === "production" ? "1d" : 0,
     }),
   );

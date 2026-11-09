@@ -1,7 +1,10 @@
 node_modules/
 dist/
 .env
+.env.local
+.vercel/
 .pgdata/
 *.log
 coverage/
 .DS_Store
+.neon
