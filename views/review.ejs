@@ -1,0 +1,117 @@
+<%- include("partials/head") %>
+<%- include("partials/nav") %>
+
+<main class="container">
+  <%- include("partials/flash") %>
+
+  <div class="page-heading">
+    <div>
+      <h1>Review registration</h1>
+      <p class="muted">Check each course before confirming. Nothing is registered until you confirm.</p>
+    </div>
+  </div>
+
+  <% if (typeof confirmError !== "undefined" && confirmError) { %>
+    <div class="flash flash-error" role="alert"><%= confirmError %></div>
+  <% } %>
+
+  <% if (evaluation.globalErrors.length > 0) { %>
+    <div class="flash flash-error" role="alert">
+      <ul class="plain-list">
+        <% evaluation.globalErrors.forEach((error) => { %>
+          <li><%= error %></li>
+        <% }); %>
+      </ul>
+    </div>
+  <% } %>
+
+  <% if (evaluation.items.length === 0) { %>
+    <section class="panel">
+      <p>No courses were selected.</p>
+      <a class="button secondary" href="/courses">Back to courses</a>
+    </section>
+  <% } else { %>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Course</th>
+            <th scope="col">Credits</th>
+            <th scope="col">Faculty</th>
+            <th scope="col">Status</th>
+            <th scope="col">Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% evaluation.items.forEach((item) => { %>
+            <tr>
+              <td>
+                <strong><%= item.code %></strong><br>
+                <span><%= item.title %></span>
+              </td>
+              <td><%= item.credits %></td>
+              <td><%= item.facultyName %></td>
+              <td>
+                <% if (item.status === "READY") { %>
+                  <span class="badge badge-success">Ready to register</span>
+                <% } else if (item.status === "WAITLIST") { %>
+                  <span class="badge badge-warning">Waitlist</span><br>
+                  <span class="muted">Estimated position <%= item.waitlistPosition %></span>
+                <% } else { %>
+                  <span class="badge badge-danger">Cannot register</span>
+                <% } %>
+              </td>
+              <td>
+                <% if (item.errors.length > 0) { %>
+                  <ul class="plain-list text-danger">
+                    <% item.errors.forEach((error) => { %>
+                      <li><%= error %></li>
+                    <% }); %>
+                  </ul>
+                <% } else if (item.status === "WAITLIST") { %>
+                  <span class="muted">You will join the waitlist. Waitlisted courses do not count toward your credit limit.</span>
+                <% } else { %>
+                  <span class="muted"><%= item.availableSeats %> seat<%= item.availableSeats === 1 ? "" : "s" %> available.</span>
+                <% } %>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+
+    <section class="panel summary">
+      <div class="summary-row">
+        <span>Current enrolled credits</span>
+        <strong><%= evaluation.currentCredits %></strong>
+      </div>
+      <div class="summary-row">
+        <span>New enrolled credits</span>
+        <strong><%= evaluation.newCredits %></strong>
+      </div>
+      <div class="summary-row total">
+        <span>Total after registration</span>
+        <strong><%= evaluation.totalCredits %> / <%= evaluation.maxCredits %></strong>
+      </div>
+      <% if (evaluation.waitlistCount > 0) { %>
+        <p class="muted">
+          <%= evaluation.waitlistCount %> course<%= evaluation.waitlistCount === 1 ? "" : "s" %> will be added to a waitlist.
+        </p>
+      <% } %>
+    </section>
+
+    <div class="actions">
+      <% if (evaluation.canConfirm) { %>
+        <form method="post" action="/registration/confirm">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button class="button primary" type="submit">Confirm registration</button>
+        </form>
+      <% } else { %>
+        <p class="text-danger">Fix the issues above before confirming.</p>
+      <% } %>
+      <a class="button secondary" href="/courses">Change selection</a>
+    </div>
+  <% } %>
+</main>
+
+<%- include("partials/footer") %>

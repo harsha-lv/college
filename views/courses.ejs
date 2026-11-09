@@ -1,0 +1,140 @@
+<%- include("partials/head") %>
+<%- include("partials/nav") %>
+
+<main class="container">
+  <%- include("partials/flash") %>
+
+  <div class="page-heading">
+    <div>
+      <h1><%= term ? `${term.name} courses` : "Course registration" %></h1>
+      <% if (term) { %>
+        <p class="muted">You may register for up to <%= term.maxCredits %> credits this semester.</p>
+      <% } else { %>
+        <p class="muted">There is no open semester for registration right now.</p>
+      <% } %>
+    </div>
+
+    <% if (term) { %>
+      <div class="credit-summary">
+        <span class="muted">Current credits</span>
+        <strong><%= currentCredits %> / <%= term.maxCredits %></strong>
+      </div>
+    <% } %>
+  </div>
+
+  <% if (!term) { %>
+    <section class="panel">
+      <p>Please check back when the next registration period opens.</p>
+    </section>
+  <% } else if (courses.length === 0) { %>
+    <section class="panel">
+      <p>No courses are offered this semester.</p>
+    </section>
+  <% } else { %>
+    <form method="post" action="/courses/select">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+      <div class="table-wrap">
+        <table class="course-table">
+          <thead>
+            <tr>
+              <th scope="col">Select</th>
+              <th scope="col">Course</th>
+              <th scope="col">Credits</th>
+              <th scope="col">Faculty</th>
+              <th scope="col">Schedule</th>
+              <th scope="col">Prerequisites</th>
+              <th scope="col">Seats</th>
+              <th scope="col">Waitlist</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% courses.forEach((course) => { %>
+              <%
+                const selected = selectedOfferingIds.has(course.offeringId);
+                const waitlisted = waitlistOfferingIds.has(course.offeringId);
+                const blocked = course.missingPrerequisites.length > 0 || course.studentStatus !== null;
+              %>
+              <tr class="<%= blocked ? "row-blocked" : "" %>">
+                <td>
+                  <input
+                    type="checkbox"
+                    name="offeringIds"
+                    value="<%= course.offeringId %>"
+                    aria-label="Select <%= course.code %>"
+                    <%= selected ? "checked" : "" %>
+                    <%= blocked ? "disabled" : "" %>
+                  >
+                  <% if (course.studentStatus) { %>
+                    <span class="badge"><%= course.studentStatus === "ENROLLED" ? "Enrolled" : "Waitlisted" %></span>
+                  <% } %>
+                </td>
+
+                <td>
+                  <strong><%= course.code %></strong><br>
+                  <span><%= course.title %></span>
+                  <% if (course.completed) { %>
+                    <br><span class="badge">Completed</span>
+                  <% } %>
+                </td>
+
+                <td><%= course.credits %></td>
+
+                <td>
+                  <%= course.facultyName %>
+                  <% if (course.room) { %><br><span class="muted"><%= course.room %></span><% } %>
+                </td>
+
+                <td><%= course.schedule || "TBA" %></td>
+
+                <td>
+                  <% if (course.prerequisites.length === 0) { %>
+                    <span class="muted">None</span>
+                  <% } else { %>
+                    <% course.prerequisites.forEach((prerequisite, index) => { %>
+                      <%= prerequisite.code %><%= index < course.prerequisites.length - 1 ? ", " : "" %>
+                    <% }); %>
+                    <% if (course.missingPrerequisites.length > 0) { %>
+                      <br><span class="text-danger">Missing: <%= course.missingPrerequisites.join(", ") %></span>
+                    <% } %>
+                  <% } %>
+                </td>
+
+                <td>
+                  <% if (course.availableSeats === 0) { %>
+                    <span class="badge badge-danger">Full</span>
+                  <% } else { %>
+                    <span><%= course.availableSeats %> of <%= course.capacity %></span>
+                  <% } %>
+                  <% if (course.waitlistCount > 0) { %>
+                    <br><span class="muted"><%= course.waitlistCount %> waiting</span>
+                  <% } %>
+                </td>
+
+                <td>
+                  <label class="checkbox-label">
+                    <input
+                      type="checkbox"
+                      name="waitlistOfferingIds"
+                      value="<%= course.offeringId %>"
+                      <%= waitlisted ? "checked" : "" %>
+                      <%= blocked ? "disabled" : "" %>
+                    >
+                    If full
+                  </label>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="actions">
+        <button class="button primary" type="submit">Review registration</button>
+        <span class="muted">The next page checks prerequisites, seats, and your credit limit.</span>
+      </div>
+    </form>
+  <% } %>
+</main>
+
+<%- include("partials/footer") %>

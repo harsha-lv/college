@@ -1,0 +1,74 @@
+<%- include("partials/head") %>
+<%- include("partials/nav") %>
+
+<main class="container">
+  <%- include("partials/flash") %>
+
+  <div class="page-heading">
+    <div>
+      <h1>My registrations</h1>
+      <p class="muted">Current and past course registrations.</p>
+    </div>
+    <a class="button primary" href="/courses">Register for courses</a>
+  </div>
+
+  <% if (registrations.length === 0) { %>
+    <section class="panel">
+      <p>You have not registered for any courses yet.</p>
+      <a class="button secondary" href="/courses">Browse courses</a>
+    </section>
+  <% } else { %>
+    <% registrations.forEach((registration) => { %>
+      <section class="panel registration-card">
+        <div class="section-heading">
+          <div>
+            <h2><%= registration.term.name %></h2>
+            <p class="muted">Registered <%= formatDateTime(registration.createdAt) %></p>
+          </div>
+          <a class="button secondary" href="/registrations/<%= registration.id %>">View details</a>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Course</th>
+                <th scope="col">Credits</th>
+                <th scope="col">Faculty</th>
+                <th scope="col">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% registration.courses.forEach((course) => { %>
+                <tr>
+                  <td><strong><%= course.code %></strong> — <%= course.title %></td>
+                  <td><%= course.credits %></td>
+                  <td><%= course.facultyName %></td>
+                  <td>
+                    <% if (course.status === "ENROLLED") { %>
+                      <span class="badge badge-success">Enrolled</span>
+                    <% } else { %>
+                      <span class="badge badge-warning">Waitlisted</span>
+                      <% if (course.waitlistPosition) { %>
+                        <span class="muted">#<%= course.waitlistPosition %></span>
+                      <% } %>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="muted">
+          <%= registration.enrolledCredits %> enrolled credit<%= registration.enrolledCredits === 1 ? "" : "s" %>
+          <% if (registration.waitlistCount > 0) { %>
+            · <%= registration.waitlistCount %> waitlisted
+          <% } %>
+        </p>
+      </section>
+    <% }); %>
+  <% } %>
+</main>
+
+<%- include("partials/footer") %>

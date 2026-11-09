@@ -1,0 +1,9 @@
+<% if (typeof flash !== "undefined" && flash && flash.length > 0) { %>
+  <div class="flash-stack">
+    <% flash.forEach((message) => { %>
+      <div class="flash flash-<%= message.type %>" role="<%= message.type === "error" ? "alert" : "status" %>">
+        <%= message.message %>
+      </div>
+    <% }); %>
+  </div>
+<% } %>

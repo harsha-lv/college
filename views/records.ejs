@@ -1,0 +1,87 @@
+<%- include("partials/head") %>
+<%- include("partials/nav") %>
+
+<main class="container">
+  <%- include("partials/flash") %>
+
+  <div class="page-heading">
+    <div>
+      <h1>Academic record</h1>
+      <p class="muted">Completed coursework and registration history.</p>
+    </div>
+    <a class="button secondary" href="/registrations">View registrations</a>
+  </div>
+
+  <section class="panel student-summary">
+    <p><strong><%= currentStudent.fullName %></strong></p>
+    <p class="muted"><%= currentStudent.studentNumber %> · <%= currentStudent.email %></p>
+  </section>
+
+  <h2>Completed courses</h2>
+  <% if (record.completedCourses.length === 0) { %>
+    <section class="panel">
+      <p class="muted">No completed courses are on record.</p>
+    </section>
+  <% } else { %>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Course</th>
+            <th scope="col">Credits</th>
+            <th scope="col">Grade</th>
+            <th scope="col">Term</th>
+            <th scope="col">Recorded</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% record.completedCourses.forEach((course) => { %>
+            <tr>
+              <td><strong><%= course.code %></strong> — <%= course.title %></td>
+              <td><%= course.credits %></td>
+              <td><%= course.grade %></td>
+              <td><%= course.completedTerm || "—" %></td>
+              <td><%= formatDate(course.completedAt) %></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+
+  <h2>Registration history</h2>
+  <% if (record.registrations.length === 0) { %>
+    <section class="panel">
+      <p class="muted">No registrations are on record.</p>
+    </section>
+  <% } else { %>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Term</th>
+            <th scope="col">Registered</th>
+            <th scope="col">Courses</th>
+            <th scope="col">Enrolled credits</th>
+            <th scope="col">Waitlisted</th>
+            <th scope="col"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% record.registrations.forEach((registration) => { %>
+            <tr>
+              <td><%= registration.term.name %></td>
+              <td><%= formatDateTime(registration.createdAt) %></td>
+              <td><%= registration.courses.map((course) => course.code).join(", ") %></td>
+              <td><%= registration.enrolledCredits %></td>
+              <td><%= registration.waitlistCount %></td>
+              <td><a href="/registrations/<%= registration.id %>">Details</a></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</main>
+
+<%- include("partials/footer") %>

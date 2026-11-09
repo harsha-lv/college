@@ -1,0 +1,25 @@
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="/">College Registration</a>
+
+    <% if (typeof currentStudent !== "undefined" && currentStudent) { %>
+      <nav aria-label="Main navigation">
+        <a href="/courses" class="<%= typeof currentPath !== "undefined" && currentPath && currentPath.startsWith("/courses") ? "active" : "" %>">Courses</a>
+        <a href="/registrations" class="<%= typeof currentPath !== "undefined" && currentPath && currentPath.startsWith("/registrations") ? "active" : "" %>">My registrations</a>
+        <a href="/records" class="<%= typeof currentPath !== "undefined" && currentPath && currentPath.startsWith("/records") ? "active" : "" %>">Academic record</a>
+      </nav>
+
+      <div class="user-bar">
+        <span><%= currentStudent.fullName %> · <%= currentStudent.studentNumber %></span>
+        <form method="post" action="/logout">
+          <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>">
+          <button class="link-button" type="submit">Sign out</button>
+        </form>
+      </div>
+    <% } else { %>
+      <nav aria-label="Main navigation">
+        <a href="/login" class="<%= typeof currentPath !== "undefined" && currentPath === "/login" ? "active" : "" %>">Sign in</a>
+      </nav>
+    <% } %>
+  </div>
+</header>
