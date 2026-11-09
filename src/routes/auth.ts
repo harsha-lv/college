@@ -21,7 +21,7 @@ router.post("/login", redirectIfAuthenticated, (req, res, next) => {
   const nextPath = safeNextPath(req.body.next);
 
   if (!email || !password) {
-    return res.status(400).render("login", {
+    return res.render("login", {
       title: "Sign in",
       email,
       error: "Enter your email and password.",
@@ -40,7 +40,7 @@ router.post("/login", redirectIfAuthenticated, (req, res, next) => {
             ? String((info as { message: unknown }).message)
             : "Invalid email or password.";
 
-        return res.status(401).render("login", {
+        return res.render("login", {
           title: "Sign in",
           email,
           error: message,
